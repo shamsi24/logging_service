@@ -47,6 +47,22 @@ class DebugLogging extends Interceptor {
     }
   }
 
+  /// Print uzun mətnləri hissə-hissə (Flutter console limiti ucun)
+  void _printLongText(String text, {String prefix = ''}) {
+    const int chunkSize = 800; // Flutter console limiti
+    final int length = text.length;
+
+    if (length <= chunkSize) {
+      print('$prefix$text');
+      return;
+    }
+
+    for (int i = 0; i < length; i += chunkSize) {
+      final int end = (i + chunkSize < length) ? i + chunkSize : length;
+      print('$prefix${text.substring(i, end)}');
+    }
+  }
+
   /// Standart headerləri filtreləyir, yalnız custom headerləri qaytarır
   Map<String, dynamic> _filterHeaders(Map<String, dynamic> headers) {
     final filtered = <String, dynamic>{};
@@ -67,11 +83,12 @@ class DebugLogging extends Interceptor {
       if (options.headers.isNotEmpty) {
         final filteredHeaders = _filterHeaders(options.headers);
         if (filteredHeaders.isNotEmpty) {
-          print('📋 HEADERS:\n${_prettyPrint(filteredHeaders)}');
+          _printLongText(_prettyPrint(filteredHeaders),
+              prefix: '📋 HEADERS:\n');
         }
       }
       if (options.data != null) {
-        print('📦 BODY:\n${_prettyPrint(options.data)}');
+        _printLongText(_prettyPrint(options.data), prefix: '📦 BODY:\n');
       }
       print('─' * 80);
     }
@@ -93,11 +110,12 @@ class DebugLogging extends Interceptor {
       if (response.headers.map.isNotEmpty) {
         final filteredHeaders = _filterHeaders(response.headers.map);
         if (filteredHeaders.isNotEmpty) {
-          print('📋 HEADERS:\n${_prettyPrint(filteredHeaders)}');
+          _printLongText(_prettyPrint(filteredHeaders),
+              prefix: '📋 HEADERS:\n');
         }
       }
       if (response.data != null) {
-        print('📦 DATA:\n${_prettyPrint(response.data)}');
+        _printLongText(_prettyPrint(response.data), prefix: '📦 DATA:\n');
       }
       print('─' * 80);
     }
@@ -119,7 +137,8 @@ class DebugLogging extends Interceptor {
       print('❌ ERROR TYPE: ${err.type}');
       print('💬 MESSAGE: ${err.message}');
       if (err.response?.data != null) {
-        print('📦 ERROR DATA:\n${_prettyPrint(err.response?.data)}');
+        _printLongText(_prettyPrint(err.response?.data),
+            prefix: '📦 ERROR DATA:\n');
       }
       print('─' * 80);
     }
