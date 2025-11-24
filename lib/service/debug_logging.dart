@@ -8,6 +8,34 @@ class DebugLogging extends Interceptor {
   final debug = DebugStorage();
   final Stopwatch stopwatch = Stopwatch();
 
+  /// Standart headerlərin siyahısı - bunlar print olunmayacaq
+  static const _standardHeaders = {
+    'connection',
+    'keep-alive',
+    'cache-control',
+    'transfer-encoding',
+    'content-encoding',
+    'content-length',
+    'content-type',
+    'date',
+    'server',
+    'vary',
+    'accept-encoding',
+    'pragma',
+    'expires',
+    'cf-cache-status',
+    'cf-ray',
+    'report-to',
+    'nel',
+    'alt-svc',
+    'x-ratelimit-limit',
+    'x-ratelimit-remaining',
+    'access-control-allow-origin',
+    'access-control-allow-methods',
+    'access-control-allow-headers',
+    'access-control-max-age',
+  };
+
   /// Pretty print JSON data
   String _prettyPrint(dynamic data) {
     if (data == null) return 'null';
@@ -19,6 +47,17 @@ class DebugLogging extends Interceptor {
     }
   }
 
+  /// Standart headerləri filtreləyir, yalnız custom headerləri qaytarır
+  Map<String, dynamic> _filterHeaders(Map<String, dynamic> headers) {
+    final filtered = <String, dynamic>{};
+    headers.forEach((key, value) {
+      if (!_standardHeaders.contains(key.toLowerCase())) {
+        filtered[key] = value;
+      }
+    });
+    return filtered;
+  }
+
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     stopwatch.start();
@@ -26,7 +65,10 @@ class DebugLogging extends Interceptor {
       print('🐙 REQUEST [${options.method}] => URL: ${options.uri}');
       print('⏰ TIME: ${DateTime.now()}');
       if (options.headers.isNotEmpty) {
-        print('📋 HEADERS:\n${_prettyPrint(options.headers)}');
+        final filteredHeaders = _filterHeaders(options.headers);
+        if (filteredHeaders.isNotEmpty) {
+          print('📋 HEADERS:\n${_prettyPrint(filteredHeaders)}');
+        }
       }
       if (options.data != null) {
         print('📦 BODY:\n${_prettyPrint(options.data)}');
@@ -49,7 +91,10 @@ class DebugLogging extends Interceptor {
       print('⏰ TIME: ${DateTime.now()}');
       print('⏱️  ELAPSED TIME: $elapsedMilliseconds ms');
       if (response.headers.map.isNotEmpty) {
-        print('📋 HEADERS:\n${_prettyPrint(response.headers.map)}');
+        final filteredHeaders = _filterHeaders(response.headers.map);
+        if (filteredHeaders.isNotEmpty) {
+          print('📋 HEADERS:\n${_prettyPrint(filteredHeaders)}');
+        }
       }
       if (response.data != null) {
         print('📦 DATA:\n${_prettyPrint(response.data)}');
