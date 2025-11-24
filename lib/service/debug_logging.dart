@@ -47,20 +47,9 @@ class DebugLogging extends Interceptor {
     }
   }
 
-  /// Print uzun mətnləri hissə-hissə (Flutter console limiti ucun)
-  void _printLongText(String text, {String prefix = ''}) {
-    const int chunkSize = 800; // Flutter console limiti
-    final int length = text.length;
-
-    if (length <= chunkSize) {
-      print('$prefix$text');
-      return;
-    }
-
-    for (int i = 0; i < length; i += chunkSize) {
-      final int end = (i + chunkSize < length) ? i + chunkSize : length;
-      print('$prefix${text.substring(i, end)}');
-    }
+  /// Debug print - avtomatik olaraq uzun mətnləri parçalayır
+  void _log(String message) {
+    debugPrint(message, wrapWidth: 1024);
   }
 
   /// Standart headerləri filtreləyir, yalnız custom headerləri qaytarır
@@ -78,19 +67,18 @@ class DebugLogging extends Interceptor {
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     stopwatch.start();
     if (kDebugMode) {
-      print('🐙 REQUEST [${options.method}] => URL: ${options.uri}');
-      print('⏰ TIME: ${DateTime.now()}');
+      _log('🐙 REQUEST [${options.method}] => URL: ${options.uri}');
+      _log('⏰ TIME: ${DateTime.now()}');
       if (options.headers.isNotEmpty) {
         final filteredHeaders = _filterHeaders(options.headers);
         if (filteredHeaders.isNotEmpty) {
-          _printLongText(_prettyPrint(filteredHeaders),
-              prefix: '📋 HEADERS:\n');
+          _log('📋 HEADERS:\n${_prettyPrint(filteredHeaders)}');
         }
       }
       if (options.data != null) {
-        _printLongText(_prettyPrint(options.data), prefix: '📦 BODY:\n');
+        _log('📦 BODY:\n${_prettyPrint(options.data)}');
       }
-      print('─' * 80);
+      _log('─' * 80);
     }
     debug.addRequest(options);
     return super.onRequest(options, handler);
@@ -103,21 +91,20 @@ class DebugLogging extends Interceptor {
     stopwatch.reset();
 
     if (kDebugMode) {
-      print(
+      _log(
           '🦑 RESPONSE [${response.statusCode}] => ${response.requestOptions.method} ${response.requestOptions.uri}');
-      print('⏰ TIME: ${DateTime.now()}');
-      print('⏱️  ELAPSED TIME: $elapsedMilliseconds ms');
+      _log('⏰ TIME: ${DateTime.now()}');
+      _log('⏱️  ELAPSED TIME: $elapsedMilliseconds ms');
       if (response.headers.map.isNotEmpty) {
         final filteredHeaders = _filterHeaders(response.headers.map);
         if (filteredHeaders.isNotEmpty) {
-          _printLongText(_prettyPrint(filteredHeaders),
-              prefix: '📋 HEADERS:\n');
+          _log('📋 HEADERS:\n${_prettyPrint(filteredHeaders)}');
         }
       }
       if (response.data != null) {
-        _printLongText(_prettyPrint(response.data), prefix: '📦 DATA:\n');
+        _log('📦 DATA:\n${_prettyPrint(response.data)}');
       }
-      print('─' * 80);
+      _log('─' * 80);
     }
     debug.addResponse(response);
     return super.onResponse(response, handler);
@@ -130,17 +117,16 @@ class DebugLogging extends Interceptor {
     stopwatch.reset();
 
     if (kDebugMode) {
-      print(
+      _log(
           '🦀 ERROR [${err.response?.statusCode}] => ${err.requestOptions.method} ${err.requestOptions.path}');
-      print('⏰ TIME: ${DateTime.now()}');
-      print('⏱️  ELAPSED TIME: $elapsedMilliseconds ms');
-      print('❌ ERROR TYPE: ${err.type}');
-      print('💬 MESSAGE: ${err.message}');
+      _log('⏰ TIME: ${DateTime.now()}');
+      _log('⏱️  ELAPSED TIME: $elapsedMilliseconds ms');
+      _log('❌ ERROR TYPE: ${err.type}');
+      _log('💬 MESSAGE: ${err.message}');
       if (err.response?.data != null) {
-        _printLongText(_prettyPrint(err.response?.data),
-            prefix: '📦 ERROR DATA:\n');
+        _log('📦 ERROR DATA:\n${_prettyPrint(err.response?.data)}');
       }
-      print('─' * 80);
+      _log('─' * 80);
     }
     debug.addError(err);
     return super.onError(err, handler);
