@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -49,7 +50,7 @@ class DebugLogging extends Interceptor {
 
   /// Debug print - avtomatik olaraq uzun mətnləri parçalayır
   void _log(String message) {
-    debugPrint(message, wrapWidth: 1024);
+    log(message);
   }
 
   /// Standart headerləri filtreləyir, yalnız custom headerləri qaytarır
