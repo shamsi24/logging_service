@@ -8,7 +8,7 @@ class DebugTool {
   ShakeService? _shakeService;
   OverlayEntry? _overlayEntry;
 
-  void start(BuildContext context, String apiKey) {
+  void start(BuildContext context, String? apiKey) {
     _shakeService = ShakeService(
       onPhoneShake: () {
         if (!isOpened) {
