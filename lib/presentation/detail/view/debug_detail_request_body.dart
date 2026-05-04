@@ -82,7 +82,7 @@ class DebugDetailRequestBody extends StatelessWidget {
                     ? null
                     : GestureDetector(
                         onTap: () async {
-                          await Clipboard.setData(ClipboardData(text: e.value));
+                          await Clipboard.setData(ClipboardData(text: e.value.toString()));
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(" ${e.key} copied to clipboard"),
@@ -92,7 +92,7 @@ class DebugDetailRequestBody extends StatelessWidget {
                         child: const Icon(Icons.copy, color: Colors.grey),
                       ),
                 subtitle: Text(
-                  e.value,
+                  e.value.toString(),
                   style: rowStyle,
                 ),
               );
