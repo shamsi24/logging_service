@@ -66,8 +66,8 @@ class DebugLogging extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    stopwatch.start();
     if (kDebugMode) {
+      stopwatch.start();
       _log('🐙 REQUEST [${options.method}] => URL: ${options.uri}');
       _log('⏰ TIME: ${DateTime.now()}');
       if (options.headers.isNotEmpty) {
@@ -80,18 +80,18 @@ class DebugLogging extends Interceptor {
         _log('📦 BODY:\n${_prettyPrint(options.data)}');
       }
       _log('─' * 80);
+      debug.addRequest(options);
     }
-    debug.addRequest(options);
     return super.onRequest(options, handler);
   }
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    stopwatch.stop();
-    final elapsedMilliseconds = stopwatch.elapsedMilliseconds;
-    stopwatch.reset();
-
     if (kDebugMode) {
+      stopwatch.stop();
+      final elapsedMilliseconds = stopwatch.elapsedMilliseconds;
+      stopwatch.reset();
+
       _log(
           '🦑 RESPONSE [${response.statusCode}] => ${response.requestOptions.method} ${response.requestOptions.uri}');
       _log('⏰ TIME: ${DateTime.now()}');
@@ -106,18 +106,18 @@ class DebugLogging extends Interceptor {
         _log('📦 DATA:\n${_prettyPrint(response.data)}');
       }
       _log('─' * 80);
+      debug.addResponse(response);
     }
-    debug.addResponse(response);
     return super.onResponse(response, handler);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    stopwatch.stop();
-    final elapsedMilliseconds = stopwatch.elapsedMilliseconds;
-    stopwatch.reset();
-
     if (kDebugMode) {
+      stopwatch.stop();
+      final elapsedMilliseconds = stopwatch.elapsedMilliseconds;
+      stopwatch.reset();
+
       _log(
           '🦀 ERROR [${err.response?.statusCode}] => ${err.requestOptions.method} ${err.requestOptions.path}');
       _log('⏰ TIME: ${DateTime.now()}');
@@ -128,8 +128,8 @@ class DebugLogging extends Interceptor {
         _log('📦 ERROR DATA:\n${_prettyPrint(err.response?.data)}');
       }
       _log('─' * 80);
+      debug.addError(err);
     }
-    debug.addError(err);
     return super.onError(err, handler);
   }
 }

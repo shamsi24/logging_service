@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:logging_service/service/shake_service.dart';
 
@@ -9,6 +10,7 @@ class DebugTool {
   OverlayEntry? _overlayEntry;
 
   void start(BuildContext context, String? apiKey) {
+    if (!kDebugMode) return;
     _shakeService = ShakeService(
       onPhoneShake: () {
         if (!isOpened) {
