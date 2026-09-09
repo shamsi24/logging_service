@@ -24,6 +24,22 @@
 * Use `RedactionConfig.extend(...)` to add project specific keys, or
   `RedactionConfig.disabled()` to turn masking off.
 
+**Console output**
+
+* Console printing moved out of the Dio adapter into `NetworkLogPrinter`, so
+  any adapter renders the same way.
+* A successful call is now a single line — method, path, status, duration and
+  response size. A failed one expands into a framed block with both header
+  maps, both bodies and a ready to run cURL command, which is the only case
+  where the detail is worth the scrollback.
+* ANSI colors by method and status class, off with `useColors: false`.
+* Error blocks are indented with spaces rather than a box prefix, so the body
+  and the cURL command stay copy-paste clean from a terminal. Long bodies are
+  cut at `maxBodyLines` (40 by default) with a note saying how much was
+  dropped.
+* `DioLoggingInterceptor(printer: ...)` replaces `printToConsole`; pass `null`
+  to capture silently.
+
 **cURL export**
 
 * `CurlBuilder.build(entry)` renders a call as a runnable cURL command, exposed

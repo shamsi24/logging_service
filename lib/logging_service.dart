@@ -6,6 +6,8 @@ library;
 
 export 'src/adapter/dio/dio_logging_interceptor.dart';
 export 'src/config/redaction_config.dart';
+export 'src/console/console_palette.dart';
+export 'src/console/network_log_printer.dart';
 export 'src/export/curl_builder.dart';
 export 'src/model/log_filter.dart';
 export 'src/model/network_log_entry.dart';

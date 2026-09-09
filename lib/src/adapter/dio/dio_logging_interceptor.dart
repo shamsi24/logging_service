@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../config/redaction_config.dart';
+import '../../console/network_log_printer.dart';
 import '../../model/network_log_entry.dart';
 import '../../store/network_log_store.dart';
 
@@ -15,7 +15,7 @@ class DioLoggingInterceptor extends Interceptor {
   DioLoggingInterceptor({
     NetworkLogStore? store,
     this.redaction = const RedactionConfig(),
-    this.printToConsole = true,
+    this.printer = const NetworkLogPrinter(),
     bool? enabled,
   })  : store = store ?? NetworkLogStore.instance,
         enabled = enabled ?? kDebugMode;
@@ -25,40 +25,12 @@ class DioLoggingInterceptor extends Interceptor {
   final NetworkLogStore store;
   final RedactionConfig redaction;
 
-  /// Mirrors every call to the Dart developer log.
-  final bool printToConsole;
+  /// Console output. Pass `null` to capture silently.
+  final NetworkLogPrinter? printer;
 
   /// Defaults to [kDebugMode]. Set it to capture on profile or release builds,
   /// for instance so testers can inspect a staging build.
   final bool enabled;
-
-  /// Headers that carry no diagnostic value and only add console noise.
-  static const Set<String> _noisyHeaders = <String>{
-    'connection',
-    'keep-alive',
-    'cache-control',
-    'transfer-encoding',
-    'content-encoding',
-    'content-length',
-    'content-type',
-    'date',
-    'server',
-    'vary',
-    'accept-encoding',
-    'pragma',
-    'expires',
-    'cf-cache-status',
-    'cf-ray',
-    'report-to',
-    'nel',
-    'alt-svc',
-    'x-ratelimit-limit',
-    'x-ratelimit-remaining',
-    'access-control-allow-origin',
-    'access-control-allow-methods',
-    'access-control-allow-headers',
-    'access-control-max-age',
-  };
 
   var _counter = 0;
 
@@ -78,7 +50,7 @@ class DioLoggingInterceptor extends Interceptor {
       requestBody: redaction.redactBody(_readBody(options.data)),
     );
     store.add(entry);
-    _printRequest(entry);
+    printer?.started(entry);
 
     return super.onRequest(options, handler);
   }
@@ -99,7 +71,6 @@ class DioLoggingInterceptor extends Interceptor {
         responseBody: redaction.redactBody(_readBody(response.data)),
         responseSizeInBytes: _sizeOf(response.headers, response.data),
       ),
-      _printResponse,
     );
 
     return super.onResponse(response, handler);
@@ -125,7 +96,6 @@ class DioLoggingInterceptor extends Interceptor {
         responseSizeInBytes:
             response == null ? null : _sizeOf(response.headers, response.data),
       ),
-      _printError,
     );
 
     return super.onError(err, handler);
@@ -139,13 +109,12 @@ class DioLoggingInterceptor extends Interceptor {
   void _complete(
     RequestOptions options,
     NetworkLogEntry Function(NetworkLogEntry entry) transform,
-    void Function(NetworkLogEntry entry) print,
   ) {
     final id = options.extra[_idKey];
     if (id is! String) return;
     store.update(id, transform);
     final updated = store.byId(id);
-    if (updated != null) print(updated);
+    if (updated != null) printer?.completed(updated);
   }
 
   Map<String, String> _normalize(Map<String, dynamic> headers) {
@@ -191,64 +160,6 @@ class DioLoggingInterceptor extends Interceptor {
       return utf8.encode(encoded).length;
     } on JsonUnsupportedObjectError {
       return null;
-    }
-  }
-
-  void _printRequest(NetworkLogEntry entry) {
-    if (!printToConsole) return;
-    _log([
-      '🐙 REQUEST [${entry.method}] => ${entry.url}',
-      '⏰ TIME: ${entry.startedAt}',
-      _headerBlock(entry.requestHeaders),
-      if (entry.hasRequestBody) '📦 BODY:\n${_pretty(entry.requestBody)}',
-    ]);
-  }
-
-  void _printResponse(NetworkLogEntry entry) {
-    if (!printToConsole) return;
-    _log([
-      '🦑 RESPONSE [${entry.statusLabel}] => ${entry.method} ${entry.url}',
-      '⏱️  ELAPSED: ${entry.elapsedLabel}   📐 SIZE: ${entry.sizeLabel}',
-      _headerBlock(entry.responseHeaders),
-      if (entry.hasResponseBody) '📦 DATA:\n${_pretty(entry.responseBody)}',
-    ]);
-  }
-
-  void _printError(NetworkLogEntry entry) {
-    if (!printToConsole) return;
-    _log([
-      '🦀 ERROR [${entry.statusLabel}] => ${entry.method} ${entry.url}',
-      '⏱️  ELAPSED: ${entry.elapsedLabel}',
-      '❌ TYPE: ${entry.errorType}',
-      if (entry.errorMessage != null) '💬 MESSAGE: ${entry.errorMessage}',
-      if (entry.hasResponseBody)
-        '📦 ERROR DATA:\n${_pretty(entry.responseBody)}',
-    ]);
-  }
-
-  String? _headerBlock(Map<String, String> headers) {
-    final interesting = <String, String>{
-      for (final header in headers.entries)
-        if (!_noisyHeaders.contains(header.key.toLowerCase()))
-          header.key: header.value,
-    };
-    if (interesting.isEmpty) return null;
-    return '📋 HEADERS:\n${_pretty(interesting)}';
-  }
-
-  void _log(List<String?> lines) {
-    for (final line in lines) {
-      if (line != null) developer.log(line);
-    }
-    developer.log('─' * 80);
-  }
-
-  String _pretty(Object? data) {
-    if (data == null) return 'null';
-    try {
-      return const JsonEncoder.withIndent('  ').convert(data);
-    } on JsonUnsupportedObjectError {
-      return data.toString();
     }
   }
 }

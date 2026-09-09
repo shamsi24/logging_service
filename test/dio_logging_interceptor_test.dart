@@ -36,7 +36,7 @@ void main() {
         store: store,
         redaction: redaction,
         enabled: true,
-        printToConsole: false,
+        printer: null,
       ),
     );
     return dio;
@@ -136,14 +136,35 @@ void main() {
     expect(body['files'], isEmpty);
   });
 
+  test('drives the console printer through the interceptor', () async {
+    final output = <String>[];
+    final dio = Dio(BaseOptions(baseUrl: 'https://api.test'))
+      ..httpClientAdapter = _FakeAdapter(
+        (options) async => ResponseBody.fromString('{"ok":true}', 200),
+      );
+    dio.interceptors.add(
+      DioLoggingInterceptor(
+        store: store,
+        enabled: true,
+        printer: NetworkLogPrinter(useColors: false, sink: output.add),
+      ),
+    );
+
+    await dio.get<dynamic>('/v1/ping');
+
+    expect(output, hasLength(2));
+    expect(output.first, startsWith('→ GET'));
+    expect(output.last, startsWith('← 200'));
+    expect(output.last, isNot(contains('\n')));
+  });
+
   test('captures nothing while disabled', () async {
     final dio = Dio(BaseOptions(baseUrl: 'https://api.test'))
       ..httpClientAdapter = _FakeAdapter(
         (options) async => ResponseBody.fromString('{}', 200),
       );
     dio.interceptors.add(
-      DioLoggingInterceptor(
-          store: store, enabled: false, printToConsole: false),
+      DioLoggingInterceptor(store: store, enabled: false, printer: null),
     );
 
     await dio.get<dynamic>('/v1/ping');

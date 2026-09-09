@@ -32,6 +32,52 @@ Shake the device to open the inspector, or call `debugTool.open(context)`.
 Both the interceptor and `DebugTool` are inactive outside debug builds unless
 you pass `enabled: true`.
 
+## Console output
+
+A call that succeeds is one line. A call that fails expands, because that is
+the only case where the detail is worth the scrollback.
+
+```
+→ GET    /v1/users?page=2
+← 200  GET    /v1/users?page=2 · 118 ms · 1.2 KB
+→ POST   /v1/login
+┌─ ERROR ───────────────────────────────────────────────────────────────
+✖ 401 POST https://api.test/v1/login
+elapsed : 87 ms
+type    : badResponse
+message : Http status error [401]
+── request body
+  {
+    "username": "shamsi",
+    "password": "••• REDACTED •••"
+  }
+── response body
+  {
+    "error": "invalid_credentials"
+  }
+── curl
+  curl -X POST \
+    'https://api.test/v1/login' \
+    -H 'Content-Type: application/json' \
+    --data '{"username":"shamsi","password":"••• REDACTED •••"}'
+└───────────────────────────────────────────────────────────────────────
+```
+
+The block is indented with spaces rather than a box prefix, so the body and the
+cURL command can be selected and pasted straight out of the terminal.
+
+```dart
+DioLoggingInterceptor(
+  printer: const NetworkLogPrinter(
+    useColors: false,        // console that shows escape codes raw
+    maxBodyLines: 20,        // cut long bodies sooner
+    includeCurlOnError: false,
+  ),
+);
+```
+
+Pass `printer: null` to capture silently and use the on-device inspector only.
+
 ## Redaction
 
 Secrets are masked at capture time, so they never reach the store, the console
