@@ -1,3 +1,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
   package="com.aghyv.samir.logging_service">
+
+  <!--
+    logging_service does not record or capture the screen.
+    Releases before 0.0.4 depended on shake_flutter, which merged a
+    mediaProjection foreground service into every host app and caused
+    Google Play "FOREGROUND_SERVICE_MEDIA_PROJECTION" rejections.
+    These markers strip that leftover out of the merged manifest when it
+    still arrives from another library or a stale build cache.
+    A permission declared by the host app itself always wins, so an app
+    that genuinely records the screen is unaffected.
+  -->
+  <uses-permission
+    android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"
+    tools:node="remove" />
 </manifest>

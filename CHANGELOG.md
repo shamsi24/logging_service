@@ -1,3 +1,9 @@
+## 0.0.5
+
+* Android manifest now explicitly removes `FOREGROUND_SERVICE_MEDIA_PROJECTION`
+  from the merged manifest, so stale `shake_flutter` leftovers in a host app's
+  library graph or build cache no longer trigger Google Play rejections.
+
 ## 0.0.4
 
 * Removed unused `shake_flutter` dependency. It merged
