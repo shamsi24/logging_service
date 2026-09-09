@@ -1,3 +1,73 @@
+## 0.1.0
+
+**Client agnostic core**
+
+* New `NetworkLogEntry` model and `NetworkLogStore` hold captured calls without
+  referencing Dio, so adapters for other HTTP clients can reuse them.
+* `DioLoggingInterceptor` replaces `DebugLogging` as a thin adapter on top of
+  that core. `DebugLogging` still works but is deprecated.
+* Calls are now paired by a per request id instead of by URL, so concurrent
+  calls to the same endpoint no longer overwrite each other's response.
+* Elapsed time is measured per call instead of through one shared `Stopwatch`,
+  which reported wrong durations as soon as two calls overlapped.
+* A response for an uncaptured request is ignored instead of throwing a null
+  check exception.
+* The store is a ring buffer (200 calls by default), so a long session no
+  longer grows without bound.
+
+**Credential redaction**
+
+* `RedactionConfig` masks `Authorization`, `Cookie`, `password`, `token`,
+  card data and more, in headers, bodies and query parameters. It is on by
+  default and runs at capture time, so a secret never reaches the store, the
+  console, the detail screen or a cURL export.
+* Use `RedactionConfig.extend(...)` to add project specific keys, or
+  `RedactionConfig.disabled()` to turn masking off.
+
+**cURL export**
+
+* `CurlBuilder.build(entry)` renders a call as a runnable cURL command, exposed
+  in the detail screen through the terminal icon. Quoting is escaped for POSIX
+  shells.
+
+**Search and filters**
+
+* The call list has a search field (URL, method, status code), HTTP method
+  chips and an all / success / error filter.
+* The list updates live while calls arrive, has a clear action, an empty state
+  and shows status code, duration and response size per row.
+
+**Other**
+
+* Single entry point: `import 'package:logging_service/logging_service.dart'`.
+* `FormData` request bodies are flattened and shown instead of the previous
+  "not supported yet" placeholder.
+* The inspector follows the app theme instead of hardcoded black text.
+* `DebugTool.open(context)` opens the inspector without a shake, and
+  `DebugTool(enabled: ...)` keeps it reachable on profile or release builds.
+* Added unit and widget tests.
+
+**Pure Dart package**
+
+* Removed the Android, iOS, macOS, Linux, Windows and web plugin scaffolding.
+  It only ever returned the platform version and was never called from Dart.
+* The package no longer contributes anything to the host `AndroidManifest.xml`,
+  which removes the whole class of manifest merge problems that caused the
+  earlier Google Play rejections. The `tools:node="remove"` marker added in
+  `0.0.5` is gone with it; if a permission still reaches your app it comes from
+  another library, and the README explains how to strip it app side.
+* Fixes the broken web build: `pubspec.yaml` declared a web plugin class in
+  `lib/logging_service_web.dart`, a file that never existed.
+* Dropped the now unused `flutter_web_plugins`, `web` and
+  `plugin_platform_interface` dependencies.
+
+**Breaking**
+
+* `DebugModel`, `DebugStorage` and `DebugPage` are removed. Use
+  `NetworkLogEntry`, `NetworkLogStore` and `LogsPage`.
+* The package is no longer a Flutter plugin. Run `flutter clean` once after
+  upgrading so the generated plugin registrant is rebuilt.
+
 ## 0.0.5
 
 * Android manifest now explicitly removes `FOREGROUND_SERVICE_MEDIA_PROJECTION`
