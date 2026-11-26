@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
+
+import 'package:flutter/foundation.dart';
 
 import '../export/curl_builder.dart';
 import '../model/network_log_entry.dart';
@@ -8,7 +9,16 @@ import 'console_palette.dart';
 /// Receives a finished console message.
 typedef ConsoleSink = void Function(String message);
 
-void _developerSink(String message) => developer.log(message, name: 'network');
+/// Writes to stdout through [debugPrint].
+///
+/// `dart:developer`'s `log` posts to the VM service Logging stream, which
+/// `flutter run` does not forward on iOS (it only listens to Stdout/Stderr),
+/// so the calls never reached the terminal there. [debugPrint] goes to stdout
+/// on every platform, throttles bursts so Android logcat drops nothing, and
+/// [_wrapWidth] splits long lines before the iOS system log cuts them.
+void _stdoutSink(String message) => debugPrint(message, wrapWidth: _wrapWidth);
+
+const int _wrapWidth = 1000;
 
 /// Console output for captured calls.
 ///
@@ -22,7 +32,7 @@ class NetworkLogPrinter {
     this.maxBodyLines = 40,
     this.includeCurlOnError = true,
     this.width = 72,
-    this.sink = _developerSink,
+    this.sink = _stdoutSink,
   });
 
   /// Emits ANSI escape codes. Turn it off for a console that shows them raw.
